@@ -1,0 +1,18 @@
+body {
+  background-color: #f0f0f0;
+  max-width: 1200px;
+  margin: auto;
+}
+
+
+/*
+  Arranjo no formulário "Abrir Sessão"
+*/
+.ant-input-number:has(#formAbrirSessao_duration) {
+  vertical-align: middle;
+  font-size: 20px;
+}
+
+div:has([for="formAbrirSessao_duration"]) {
+  margin: auto;
+}
