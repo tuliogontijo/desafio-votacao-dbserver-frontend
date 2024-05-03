@@ -143,15 +143,17 @@ const Card = ({ pauta, handleOpenSession, handleGetResult, handleVote, getPartia
                 style={{ padding: 0 }}
                 items={OppeningClosingItems}
                 extra={
-                  <Popover
-                    title='Votação parcial'
-                    content={contentPopover}
-                    trigger='click'
-                    placement='leftBottom'
-                    onOpenChange={handleOpenPopover}
-                  >
-                    <Button type='primary'>Votos Computados</Button>
-                  </Popover>
+                  pauta?.statusSession === 'ABERTA' && (
+                    <Popover
+                      title='Votação parcial'
+                      content={contentPopover}
+                      trigger='click'
+                      placement='leftBottom'
+                      onOpenChange={handleOpenPopover}
+                    >
+                      <Button type='primary'>Votos Computados</Button>
+                    </Popover>
+                  )
                 }
               />
             </>
