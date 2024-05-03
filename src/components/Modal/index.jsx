@@ -1,25 +1,28 @@
 import React from 'react';
-import PropTypes from 'prop-types'
-import { Modal as ModalAnt } from "antd";
+import PropTypes from 'prop-types';
+import { Modal as ModalAnt } from 'antd';
 
-const Modal = ({ open, title, handleOk, handleCancel, children, handleAfterOpen }) => {
+const Modal = ({ open, title, handleOk, handleCancel, children, handleAfterOpen, footer }) => {
+  //const modalContainer = useRef();
+  const handlerListener = (e) => e.key === 'Enter' && handleOk;
 
+  const handleAfterOpenUpdated = (oppening) => {
+    if (oppening) {
+      document.querySelector(`.${title.replaceAll(' ', '')}`).addEventListener('keypress', handlerListener);
 
-  const handlerListener = (e) => e.key === 'Enter' && handleOk();
-  let modalContainer = null;
+      if (handleAfterOpen) {
+        return handleAfterOpen();
+      }
+      return;
+    }
 
-  const handleAfterOpenUpdated = () => {
-    modalContainer = document.querySelector(`.${title.replaceAll(" ", "")}`);
-    modalContainer.addEventListener('keypress', handlerListener);
-    return handleAfterOpen;
-  }
-
-  const handleAfterClose = () => {
     React.Children.forEach(children, (elemento) => {
       elemento.props?.form?.resetFields();
     });
-    modalContainer && modalContainer.removeEventListener('keypress', handlerListener);
+    document.querySelector(`.${title.replaceAll(' ', '')}`).removeEventListener('keypress', handlerListener);
   };
+
+  //const handleAfterClose = () => {};
 
   return (
     <ModalAnt
@@ -28,14 +31,15 @@ const Modal = ({ open, title, handleOk, handleCancel, children, handleAfterOpen 
       onOk={handleOk}
       onCancel={handleCancel}
       afterOpenChange={handleAfterOpenUpdated}
-      afterClose={handleAfterClose}
-      wrapClassName={title.replaceAll(" ", "")}
+      //afterClose={handleAfterClose}
+      wrapClassName={title.replaceAll(' ', '')}
+      footer={footer}
       centered
     >
       {children}
     </ModalAnt>
-  )
-}
+  );
+};
 
 Modal.propTypes = {
   open: PropTypes.bool.isRequired,
@@ -44,6 +48,7 @@ Modal.propTypes = {
   handleOk: PropTypes.func,
   handleCancel: PropTypes.func,
   handleAfterOpen: PropTypes.func,
-}
+  footer: PropTypes.func,
+};
 
 export default Modal;

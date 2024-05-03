@@ -4,7 +4,6 @@ body {
   margin: auto;
 }
 
-
 /*
   Arranjo no formulário "Abrir Sessão"
 */
@@ -13,6 +12,11 @@ body {
   font-size: 20px;
 }
 
-div:has([for="formAbrirSessao_duration"]) {
+div:has([for='formAbrirSessao_duration']) {
   margin: auto;
+}
+
+.ant-message-custom-content {
+  display: flex;
+  font-size: 18px;
 }

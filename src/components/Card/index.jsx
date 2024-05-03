@@ -1,66 +1,128 @@
-import PropTypes from 'prop-types'
-import { Card as CardAnt, Badge, Descriptions, Divider, Button } from 'antd';
-import { AimOutlined, PieChartOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import PropTypes from 'prop-types';
+import { Card as CardAnt, Badge, Descriptions, Divider, Button, Popover, Progress } from 'antd';
+import { AimOutlined, LoadingOutlined, PieChartOutlined, PlayCircleOutlined } from '@ant-design/icons';
 
+import { formatDate } from '../../utils';
+import { useState } from 'react';
 
-const Card = ({ data: pauta, handleOpenSession, HandleGetResult, HandleVote }) => {
-
-  const dateFormatted = new Date(pauta.createdAt).toLocaleDateString("pt-br");
+const Card = ({ pauta, handleOpenSession, handleGetResult, handleVote, getPartialVotes }) => {
+  const [parcialResult, setParcialResult] = useState({});
+  const [isLoadingResult, setIsLoadingResult] = useState(false);
   let session = {};
   let badgeContent = {};
 
-  if (pauta.statusSession === "CRIADA") {
+  if (pauta.statusSession === 'CRIADA') {
     session = {
-      status: "criada",
+      status: 'criada',
       actionIcon: <PlayCircleOutlined />,
-      actionText: "Abrir Sessão",
-      func: handleOpenSession
+      actionText: 'Abrir Sessão',
+      func: handleOpenSession,
     };
-    badgeContent = { text: "Criada", color: "orange" }
-  } else if (pauta.statusSession === "ABERTA") {
+    badgeContent = { text: 'Criada', color: 'orange' };
+  } else if (pauta.statusSession === 'ABERTA') {
     session = {
-      status: "aberta",
+      status: 'aberta',
       actionIcon: <AimOutlined />,
-      actionText: "Votar",
-      func: HandleVote
+      actionText: 'Votar',
+      func: handleVote,
     };
-    badgeContent = { text: "Aberta", color: "green" }
+    badgeContent = { text: 'Aberta', color: 'green' };
   } else {
     session = {
-      status: "fechada",
+      status: 'fechada',
       actionIcon: <PieChartOutlined />,
-      actionText: "Ver Resultado",
-      func: HandleGetResult
+      actionText: 'Ver Resultado',
+      func: handleGetResult,
     };
-    badgeContent = { text: "Fechada", color: "red" }
+    badgeContent = { text: 'Fechada', color: 'red' };
   }
 
   const OppeningClosingItems = [
     {
       key: '1',
       label: 'Abertura',
-      children: <>{pauta.sessionOpennigDateTime?.toLocaleString()}</>,
+      children: <>{pauta.sessionOpennigDateTime}</>,
     },
     {
       key: '2',
       label: 'Fechamento',
-      children: <>{pauta.expirationDateTime?.toLocaleString()}</>,
-    }
+      children: <>{pauta.expirationDateTime}</>,
+    },
   ];
 
+  const extraElement = <>Pauta criada em {formatDate(pauta.createdAt)}</>;
+
+  const handleOpenPopover = async (isOpen) => {
+    if (isOpen) {
+      setIsLoadingResult(true);
+
+      await getPartialVotes()
+        .then((result) => {
+          const resultWithPercent = {
+            ...result,
+            percentYes: result.votesYes ? (result.votesYes / (result.votesNo + result.votesYes)) * 100 : 0,
+            percentNo: result.votesNo ? (result.votesNo / (result.votesNo + result.votesYes)) * 100 : 0,
+          };
+          setParcialResult(resultWithPercent);
+        })
+        .catch((error) => {
+          console.error(error);
+        })
+        .finally(() => {
+          setIsLoadingResult(false);
+        });
+    }
+  };
+
+  const contentPopover = isLoadingResult ? (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        fontSize: 48,
+      }}
+    >
+      <LoadingOutlined spin />
+    </div>
+  ) : (
+    <>
+      <div>
+        Sim: {parcialResult.votesYes}
+        <Progress
+          percent={parcialResult.percentYes}
+          showInfo={false}
+          strokeColor='#1677ff'
+        />
+      </div>
+      <div>
+        Não: {parcialResult.votesNo}
+        <Progress
+          percent={parcialResult.percentNo}
+          showInfo={false}
+          strokeColor='#1677ff'
+        />
+      </div>
+    </>
+  );
 
   return (
-    <Badge.Ribbon text={badgeContent.text} color={badgeContent.color} >
+    <Badge.Ribbon
+      text={badgeContent.text}
+      color={badgeContent.color}
+      placement='start'
+    >
       <CardAnt
-        title={<p style={{ paddingTop: 16 }}>{pauta.title}</p>}
+        title={<p style={{ paddingTop: 20 }}>{pauta.title}</p>}
         bordered={false}
+        extra={extraElement}
         actions={[
           <div
             key={pauta.id}
-            style={{ display: "flex", justifyContent: "center", gap: 10, fontSize: 16 }}
+            style={{ display: 'flex', justifyContent: 'center', fontSize: 16 }}
           >
             <Button
-              type="primary"
+              type='primary'
               icon={session.actionIcon}
               style={{ width: 200 }}
               onClick={session.func}
@@ -70,27 +132,42 @@ const Card = ({ data: pauta, handleOpenSession, HandleGetResult, HandleVote }) =
           </div>,
         ]}
       >
-        <div>
-          <p>{pauta.description}</p>
-          {session.status !== "criada" && <>
-            <Divider />
-            <Descriptions title="Sessão" bordered style={{ padding: 0 }} items={OppeningClosingItems} />
-          </>}
-          <p style={{ textAlign: "right", fontSize: 12, marginBottom: -20, }}>Pauta criada em {dateFormatted}</p>
-        </div>
-
-      </CardAnt >
+        <>
+          <p>{pauta.description ? pauta.description : 'Sem descrição...'}</p>
+          {pauta?.statusSession !== 'CRIADA' && (
+            <>
+              <Divider />
+              <Descriptions
+                title='Sessão'
+                bordered
+                style={{ padding: 0 }}
+                items={OppeningClosingItems}
+                extra={
+                  <Popover
+                    title='Votação parcial'
+                    content={contentPopover}
+                    trigger='click'
+                    placement='leftBottom'
+                    onOpenChange={handleOpenPopover}
+                  >
+                    <Button type='primary'>Votos Computados</Button>
+                  </Popover>
+                }
+              />
+            </>
+          )}
+        </>
+      </CardAnt>
     </Badge.Ribbon>
-  )
-}
+  );
+};
 
 Card.propTypes = {
-  data: PropTypes.object.isRequired,
+  pauta: PropTypes.object.isRequired,
   handleOpenSession: PropTypes.func.isRequired,
-  HandleGetResult: PropTypes.func.isRequired,
-  HandleVote: PropTypes.func.isRequired,
-}
-
+  handleGetResult: PropTypes.func.isRequired,
+  handleVote: PropTypes.func.isRequired,
+  getPartialVotes: PropTypes.func.isRequired,
+};
 
 export default Card;
-
