@@ -50,8 +50,6 @@ const Card = ({ pauta, handleOpenSession, handleGetResult, handleVote, getPartia
     },
   ];
 
-  const extraElement = <>Pauta criada em {formatDate(pauta.createdAt)}</>;
-
   const handleOpenPopover = async (isOpen) => {
     if (isOpen) {
       setIsLoadingResult(true);
@@ -89,44 +87,23 @@ const Card = ({ pauta, handleOpenSession, handleGetResult, handleVote, getPartia
     <>
       <div>
         Sim: {parcialResult.votesYes}
-        <Progress
-          percent={parcialResult.percentYes}
-          showInfo={false}
-          strokeColor='#1677ff'
-        />
+        <Progress percent={parcialResult.percentYes} showInfo={false} strokeColor='#1677ff' />
       </div>
       <div>
         Não: {parcialResult.votesNo}
-        <Progress
-          percent={parcialResult.percentNo}
-          showInfo={false}
-          strokeColor='#1677ff'
-        />
+        <Progress percent={parcialResult.percentNo} showInfo={false} strokeColor='#1677ff' />
       </div>
     </>
   );
 
   return (
-    <Badge.Ribbon
-      text={badgeContent.text}
-      color={badgeContent.color}
-      placement='start'
-    >
+    <Badge.Ribbon text={badgeContent.text} color={badgeContent.color} placement='start'>
       <CardAnt
         title={<p style={{ paddingTop: 20 }}>{pauta.title}</p>}
         bordered={false}
-        extra={extraElement}
         actions={[
-          <div
-            key={pauta.id}
-            style={{ display: 'flex', justifyContent: 'center', fontSize: 16 }}
-          >
-            <Button
-              type='primary'
-              icon={session.actionIcon}
-              style={{ width: 200 }}
-              onClick={session.func}
-            >
+          <div key={pauta.id} style={{ display: 'flex', justifyContent: 'center', fontSize: 16 }}>
+            <Button type='primary' icon={session.actionIcon} style={{ width: 200 }} onClick={session.func}>
               {session.actionText}
             </Button>
           </div>,
@@ -148,7 +125,7 @@ const Card = ({ pauta, handleOpenSession, handleGetResult, handleVote, getPartia
                       title='Votação parcial'
                       content={contentPopover}
                       trigger='click'
-                      placement='leftBottom'
+                      placement='bottom'
                       onOpenChange={handleOpenPopover}
                     >
                       <Button type='primary'>Votos Computados</Button>
@@ -158,6 +135,10 @@ const Card = ({ pauta, handleOpenSession, handleGetResult, handleVote, getPartia
               />
             </>
           )}
+          <Divider />
+          <p style={{ textAlign: 'end', fontSize: 12, marginBottom: 0 }}>
+            Pauta criada em {formatDate(pauta.createdAt)}
+          </p>
         </>
       </CardAnt>
     </Badge.Ribbon>

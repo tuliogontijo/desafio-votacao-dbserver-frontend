@@ -1,4 +1,16 @@
-import { Descriptions, Divider, InputNumber, Space, FloatButton, Form, Input, Radio, message } from 'antd';
+import {
+  Descriptions,
+  Divider,
+  InputNumber,
+  Space,
+  FloatButton,
+  Form,
+  Input,
+  Radio,
+  message,
+  Segmented,
+  Affix,
+} from 'antd';
 import { SyncOutlined, PlusOutlined, LoadingOutlined } from '@ant-design/icons';
 import loader from '../../assets/loader.gif';
 
@@ -11,6 +23,7 @@ import { formatDate } from '../../utils';
 
 const Layout = () => {
   const [pautas, setPautas] = useState(null);
+  const [statusSelector, setStatusSelector] = useState('TODAS');
   const [results, setResults] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
@@ -42,8 +55,7 @@ const Layout = () => {
         setPautas(dataToDisplay);
       })
       .catch((error) => {
-        notify('error', 'Algo deu errado ao consultar as Pautas');
-        console.error(error);
+        notify('error', error?.response?.data?.message || 'Algo deu errado ao consultar as Pautas');
       })
       .finally(() => {
         setIsLoading(false);
@@ -63,7 +75,7 @@ const Layout = () => {
         partialToReturn = response.data;
       })
       .catch((error) => {
-        console.error(error);
+        notify('error', error?.response?.data?.message || 'Algo deu errado ao consultar o resultado');
       })
       .finally(() => {
         setIsLoadingResults(false);
@@ -74,7 +86,6 @@ const Layout = () => {
 
   useEffect(() => {
     getPautas();
-    //pautas && notify('success', 'Pautas cerragadas com sucesso!');
   }, []);
 
   useEffect(() => {
@@ -84,7 +95,6 @@ const Layout = () => {
 
   const handleRefresh = () => {
     getPautas();
-    //pautas && notify('success', 'Pautas cerragadas com sucesso!');
   };
 
   const toggleModal = (modalName = null, pauta = pautaSelected || null) => {
@@ -120,6 +130,8 @@ const Layout = () => {
       inputTitleRef.current.focus();
       return;
     }
+    setIsLoading(true);
+    toggleModal();
 
     const { title, description } = formInclusaoPauta.getFieldsValue();
 
@@ -130,11 +142,11 @@ const Layout = () => {
         getPautas();
       })
       .catch((error) => {
-        notify('error', 'Algo deu errado ao inserir a Pauta');
-        console.error(error);
+        notify('error', error?.response?.data?.message || 'Algo deu errado ao incluir a Pauta');
       })
       .finally(() => {
-        toggleModal();
+        setIsLoading(false);
+        setStatusSelector('CRIADA');
       });
   };
 
@@ -145,6 +157,8 @@ const Layout = () => {
       inputCPFRef.current.focus();
       return;
     }
+    setIsLoading(true);
+    toggleModal();
 
     const { cpf, voto } = formVoto.getFieldsValue();
 
@@ -155,15 +169,22 @@ const Layout = () => {
         getPautas();
       })
       .catch((error) => {
-        notify('error', 'Algo deu errado ao registrar o voto!');
-        console.error(error);
+        notify(
+          'error',
+          error?.response?.data?.message ||
+            error?.response?.data?.errors.join('\n') ||
+            'Algo deu errado ao registrar o voto',
+        );
+        console.log(error);
       })
       .finally(() => {
-        toggleModal();
+        setIsLoading(false);
       });
   };
 
   const handleOkModalOpenSession = async () => {
+    toggleModal();
+    setIsLoading(true);
     const { duration } = formAbrirSessao.getFieldsValue();
 
     await api
@@ -173,11 +194,11 @@ const Layout = () => {
         getPautas();
       })
       .catch((error) => {
-        notify('error', 'Algo deu errado ao abrir a Sessão!');
-        console.error(error);
+        notify('error', error?.response?.data?.message || 'Algo deu errado ao abrir a Sessão');
       })
       .finally(() => {
-        toggleModal();
+        setIsLoading(false);
+        setStatusSelector('ABERTA');
       });
   };
 
@@ -205,6 +226,25 @@ const Layout = () => {
     });
   };
 
+  const segmentedOptions = [
+    {
+      label: <p>Todas</p>,
+      value: 'TODAS',
+    },
+    {
+      label: <p>Criadas</p>,
+      value: 'CRIADA',
+    },
+    {
+      label: <p>Abertas</p>,
+      value: 'ABERTA',
+    },
+    {
+      label: <p>Fechadas</p>,
+      value: 'FECHADA',
+    },
+  ];
+
   return (
     <>
       {/* Transformar em Componente: Loader */}
@@ -225,7 +265,15 @@ const Layout = () => {
           </div>
         </div>
       )}
-
+      <Affix>
+        <Segmented
+          options={segmentedOptions}
+          onChange={(value) => setStatusSelector(value)}
+          block={true}
+          value={statusSelector}
+          style={{ margin: '4px 16px ', padding: 16, fontSize: 16, opacity: 0.9 }}
+        />
+      </Affix>
       <>
         {/* Transformar em Componente: List */}
         <Space
@@ -238,16 +286,19 @@ const Layout = () => {
             marginBottom: 200,
           }}
         >
-          {pautas?.map((pauta) => (
-            <Card
-              pauta={pauta}
-              key={pauta.id}
-              handleOpenSession={() => toggleModal('AbrirSessao', pauta)}
-              handleGetResult={() => toggleModal('VerResultado', pauta)}
-              handleVote={() => toggleModal('RegistrarVoto', pauta)}
-              getPartialVotes={() => getResults(pauta, true)}
-            />
-          ))}
+          {pautas?.map((pauta) => {
+            if (pauta?.statusSession === statusSelector || statusSelector === 'TODAS')
+              return (
+                <Card
+                  pauta={pauta}
+                  key={pauta.id}
+                  handleOpenSession={() => toggleModal('AbrirSessao', pauta)}
+                  handleGetResult={() => toggleModal('VerResultado', pauta)}
+                  handleVote={() => toggleModal('RegistrarVoto', pauta)}
+                  getPartialVotes={() => getResults(pauta, true)}
+                />
+              );
+          })}
         </Space>
 
         {/* Transformar em Componente: FloatButtons */}
@@ -309,16 +360,10 @@ const Layout = () => {
                 },
               ]}
             >
-              <Input
-                ref={inputTitleRef}
-                onPressEnter={handleOkModalInsertPauta}
-              />
+              <Input ref={inputTitleRef} onPressEnter={handleOkModalInsertPauta} />
             </Form.Item>
 
-            <Form.Item
-              label='Descrição'
-              name='description'
-            >
+            <Form.Item label='Descrição' name='description'>
               <Input.TextArea onPressEnter={handleOkModalInsertPauta} />
             </Form.Item>
           </Form>
@@ -350,12 +395,7 @@ const Layout = () => {
                 Pauta: <span style={{ fontWeight: 900 }}> {pautaSelected?.title}</span>
               </p>
             </div>
-            <Form.Item
-              label='Duração'
-              name='duration'
-              initialValue={1}
-              shouldUpdate={true}
-            >
+            <Form.Item label='Duração' name='duration' initialValue={1} shouldUpdate={true}>
               <InputNumber
                 ref={inputDurationRef}
                 addonAfter={<p>minutos</p>}

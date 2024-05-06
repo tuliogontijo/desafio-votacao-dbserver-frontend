@@ -3,26 +3,16 @@ import PropTypes from 'prop-types';
 import { Modal as ModalAnt } from 'antd';
 
 const Modal = ({ open, title, handleOk, handleCancel, children, handleAfterOpen, footer }) => {
-  //const modalContainer = useRef();
-  const handlerListener = (e) => e.key === 'Enter' && handleOk;
-
   const handleAfterOpenUpdated = (oppening) => {
-    if (oppening) {
-      document.querySelector(`.${title.replaceAll(' ', '')}`).addEventListener('keypress', handlerListener);
-
-      if (handleAfterOpen) {
-        return handleAfterOpen();
-      }
+    if (!oppening) {
+      React.Children.forEach(children, (elemento) => {
+        elemento.props?.form?.resetFields();
+      });
       return;
     }
 
-    React.Children.forEach(children, (elemento) => {
-      elemento.props?.form?.resetFields();
-    });
-    document.querySelector(`.${title.replaceAll(' ', '')}`).removeEventListener('keypress', handlerListener);
+    if (handleAfterOpen) handleAfterOpen();
   };
-
-  //const handleAfterClose = () => {};
 
   return (
     <ModalAnt
@@ -30,11 +20,11 @@ const Modal = ({ open, title, handleOk, handleCancel, children, handleAfterOpen,
       title={title}
       onOk={handleOk}
       onCancel={handleCancel}
-      afterOpenChange={handleAfterOpenUpdated}
-      //afterClose={handleAfterClose}
       wrapClassName={title.replaceAll(' ', '')}
+      afterOpenChange={handleAfterOpenUpdated}
       footer={footer}
       centered
+      destroyOnClose={true}
     >
       {children}
     </ModalAnt>

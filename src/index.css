@@ -4,9 +4,6 @@ body {
   margin: auto;
 }
 
-/*
-  Arranjo no formulário "Abrir Sessão"
-*/
 .ant-input-number:has(#formAbrirSessao_duration) {
   vertical-align: middle;
   font-size: 20px;
